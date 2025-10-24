@@ -40,10 +40,26 @@ def init_db():
 
 @app.route('/')
 def index():
+    sort_by = request.args.get('sort', 'updated')
+    
     conn = get_db_connection()
-    notes = conn.execute('SELECT * FROM notes ORDER BY updated_at DESC').fetchall()
+    
+    # Determine sort order
+    if sort_by == 'event_date':
+        # Sort by event date, putting NULL values last
+        notes = conn.execute('SELECT * FROM notes ORDER BY CASE WHEN event_date IS NULL THEN 1 ELSE 0 END, event_date DESC, event_time DESC').fetchall()
+    elif sort_by == 'event_time':
+        # Sort by event time, putting NULL values last
+        notes = conn.execute('SELECT * FROM notes ORDER BY CASE WHEN event_time IS NULL THEN 1 ELSE 0 END, event_time DESC, event_date DESC').fetchall()
+    elif sort_by == 'created':
+        notes = conn.execute('SELECT * FROM notes ORDER BY created_at DESC').fetchall()
+    elif sort_by == 'title':
+        notes = conn.execute('SELECT * FROM notes ORDER BY title ASC').fetchall()
+    else:  # default: updated
+        notes = conn.execute('SELECT * FROM notes ORDER BY updated_at DESC').fetchall()
+    
     conn.close()
-    return render_template('index.html', notes=notes)
+    return render_template('index.html', notes=notes, sort_by=sort_by)
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_note():
@@ -128,18 +144,33 @@ def delete_note(id):
 @app.route('/search')
 def search():
     query = request.args.get('q', '')
+    sort_by = request.args.get('sort', 'updated')
     
     if query:
         conn = get_db_connection()
-        notes = conn.execute(
-            'SELECT * FROM notes WHERE title LIKE ? OR content LIKE ? OR category LIKE ? OR tags LIKE ? ORDER BY updated_at DESC',
-            (f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%')
-        ).fetchall()
+        
+        # Build the base search query
+        base_query = 'SELECT * FROM notes WHERE title LIKE ? OR content LIKE ? OR category LIKE ? OR tags LIKE ?'
+        params = (f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%')
+        
+        # Add sorting
+        if sort_by == 'event_date':
+            order_clause = ' ORDER BY CASE WHEN event_date IS NULL THEN 1 ELSE 0 END, event_date DESC, event_time DESC'
+        elif sort_by == 'event_time':
+            order_clause = ' ORDER BY CASE WHEN event_time IS NULL THEN 1 ELSE 0 END, event_time DESC, event_date DESC'
+        elif sort_by == 'created':
+            order_clause = ' ORDER BY created_at DESC'
+        elif sort_by == 'title':
+            order_clause = ' ORDER BY title ASC'
+        else:  # default: updated
+            order_clause = ' ORDER BY updated_at DESC'
+        
+        notes = conn.execute(base_query + order_clause, params).fetchall()
         conn.close()
     else:
         notes = []
     
-    return render_template('search.html', notes=notes, query=query)
+    return render_template('search.html', notes=notes, query=query, sort_by=sort_by)
 
 @app.route('/api/notes')
 def api_notes():

@@ -14,8 +14,23 @@
 
 {% if query %}
     {% if notes %}
-        <div class="search-results-info">
-            Found {{ notes|length }} note(s)
+        <div class="search-results-header">
+            <div class="search-results-info">
+                Found {{ notes|length }} note(s)
+            </div>
+            <div class="sort-controls">
+                <form method="GET" action="{{ url_for('search') }}" class="sort-form">
+                    <input type="hidden" name="q" value="{{ query }}">
+                    <label for="sort">Sort by:</label>
+                    <select name="sort" id="sort" class="sort-select" onchange="this.form.submit()">
+                        <option value="updated" {% if sort_by == 'updated' %}selected{% endif %}>Last Updated</option>
+                        <option value="created" {% if sort_by == 'created' %}selected{% endif %}>Created Date</option>
+                        <option value="title" {% if sort_by == 'title' %}selected{% endif %}>Title (A-Z)</option>
+                        <option value="event_date" {% if sort_by == 'event_date' %}selected{% endif %}>Event Date</option>
+                        <option value="event_time" {% if sort_by == 'event_time' %}selected{% endif %}>Event Time</option>
+                    </select>
+                </form>
+            </div>
         </div>
         
         <div class="notes-grid">
