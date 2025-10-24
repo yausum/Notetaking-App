@@ -96,6 +96,23 @@ body {
     background-color: var(--light-gray);
 }
 
+/* Generate with AI Button in Navbar */
+.btn-generate-nav {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    padding: 0.6rem 1.2rem !important;
+    border-radius: 6px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-generate-nav:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
 /* Search Input in Navbar */
 .search-input {
     flex: 1;

@@ -77,15 +77,24 @@ def add_note():
             return redirect(url_for('add_note'))
         
         conn = get_db_connection()
-        conn.execute('INSERT INTO notes (title, content, category, tags, event_date, event_time) VALUES (?, ?, ?, ?, ?, ?)',
+        cursor = conn.execute('INSERT INTO notes (title, content, category, tags, event_date, event_time) VALUES (?, ?, ?, ?, ?, ?)',
                      (title, content, category, tags, event_date, event_time))
+        note_id = cursor.lastrowid
         conn.commit()
         conn.close()
+        
+        # Check if this is from generate page (AJAX request)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': True, 'note_id': note_id})
         
         flash('Note added successfully!', 'success')
         return redirect(url_for('index'))
     
     return render_template('add_note.html')
+
+@app.route('/generate')
+def generate_note():
+    return render_template('generate_note.html')
 
 @app.route('/note/<int:id>')
 def view_note(id):
@@ -269,6 +278,87 @@ def api_summarize():
             'error': str(e)
         }), 500
 
+@app.route('/api/generate-note', methods=['POST'])
+def api_generate_note():
+    """
+    Generate a complete note from natural language description
+    POST body: {"description": "...", "language": "English"}
+    """
+    try:
+        data = request.get_json()
+        description = data.get('description', '')
+        language = data.get('language', 'English')
+        
+        if not description:
+            return jsonify({'error': 'No description provided'}), 400
+        
+        # Create prompt for generating structured note
+        messages = [
+            {
+                "role": "system",
+                "content": f"""You are a helpful assistant that creates well-structured notes from natural language descriptions.
+Generate a note in {language} with the following structure:
+1. A clear, concise title (one line)
+2. Well-organized content with proper formatting
+3. Suggest 3-5 relevant tags (comma-separated)
+
+Format your response as JSON with this exact structure:
+{{
+    "title": "Note title here",
+    "content": "Detailed content here with proper formatting and line breaks",
+    "tags": "tag1, tag2, tag3"
+}}
+
+Make the content clear, organized, and useful. Use bullet points or numbered lists when appropriate."""
+            },
+            {
+                "role": "user",
+                "content": f"Create a note about: {description}"
+            }
+        ]
+        
+        from backend.llm import call_llm_model
+        import json
+        
+        response_text = call_llm_model(messages, temperature=0.7)
+        
+        # Try to parse JSON response
+        try:
+            # Find JSON in the response (in case there's extra text)
+            start_idx = response_text.find('{')
+            end_idx = response_text.rfind('}') + 1
+            
+            if start_idx != -1 and end_idx > start_idx:
+                json_str = response_text[start_idx:end_idx]
+                note_data = json.loads(json_str)
+            else:
+                # Fallback: create structure from raw response
+                lines = response_text.strip().split('\n')
+                note_data = {
+                    'title': lines[0] if lines else 'Generated Note',
+                    'content': '\n'.join(lines[1:]) if len(lines) > 1 else response_text,
+                    'tags': ''
+                }
+        except:
+            # Fallback: use raw response
+            note_data = {
+                'title': 'Generated Note',
+                'content': response_text,
+                'tags': ''
+            }
+        
+        return jsonify({
+            'success': True,
+            'note': note_data
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
+

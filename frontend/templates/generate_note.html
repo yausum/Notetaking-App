@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Note with AI - Note Taking App{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🤖 Generate Note with AI</h1>
+    <p class="subtitle">Describe what you want to note in natural language</p>
+</div>
+
+<div class="form-container">
+    <!-- Input Form -->
+    <div id="inputForm" class="generate-form">
+        <div class="form-group">
+            <label for="description">Describe what you want to note (in natural language):</label>
+            <textarea id="description" class="form-textarea" rows="6" placeholder="Example: 3 items to bring for Badminton game tomorrow" autofocus></textarea>
+            <small class="form-help">Be as detailed or brief as you like. The AI will structure it into a proper note.</small>
+        </div>
+
+        <div class="form-group">
+            <label for="outputLanguage">Output Language:</label>
+            <select id="outputLanguage" class="form-select">
+                <option value="English">English</option>
+                <option value="Chinese">Chinese (中文)</option>
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn-primary" onclick="generateNote()" id="generateBtn">
+                <span class="btn-icon">✨</span> Generate
+            </button>
+            <a href="{{ url_for('index') }}" class="btn-secondary">Cancel</a>
+        </div>
+    </div>
+
+    <!-- Preview Section (Hidden by default) -->
+    <div id="previewSection" class="preview-section" style="display: none;">
+        <div class="preview-header">
+            <h2>📝 Generated Note Preview</h2>
+        </div>
+
+        <div class="preview-content">
+            <div class="form-group">
+                <label>Title:</label>
+                <input type="text" id="previewTitle" class="form-input" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Content:</label>
+                <div id="previewContent" class="preview-text"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Tags:</label>
+                <div id="previewTags" class="preview-tags"></div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn-primary" onclick="saveNote()">
+                <span class="btn-icon">💾</span> Save Note
+            </button>
+            <button type="button" class="btn-secondary" onclick="regenerate()">
+                <span class="btn-icon">🔄</span> Regenerate
+            </button>
+            <button type="button" class="btn-secondary" onclick="cancelGeneration()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>🤖 AI is generating your note...</p>
+            <small>This may take a few seconds</small>
+        </div>
+    </div>
+</div>
+
+<style>
+.generate-form {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.preview-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+    animation: slideIn 0.4s ease-out;
+}
+
+.preview-header h2 {
+    color: white;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.preview-content {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.preview-text {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 6px;
+    min-height: 100px;
+    white-space: pre-wrap;
+    line-height: 1.6;
+    border: 1px solid #dee2e6;
+}
+
+.preview-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.preview-tag {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.loading-content {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.btn-icon {
+    font-size: 1.1rem;
+}
+
+.form-help {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 4px;
+    display: block;
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let generatedNoteData = null;
+
+async function generateNote() {
+    const description = document.getElementById('description').value.trim();
+    const language = document.getElementById('outputLanguage').value;
+    
+    if (!description) {
+        alert('Please describe what you want to note');
+        return;
+    }
+    
+    // Show loading
+    document.getElementById('loadingIndicator').style.display = 'flex';
+    
+    // Disable button
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch('/api/generate-note', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                description: description,
+                language: language
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            generatedNoteData = data.note;
+            showPreview(data.note);
+        } else {
+            alert('Failed to generate note: ' + data.error);
+            btn.disabled = false;
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+        btn.disabled = false;
+    } finally {
+        document.getElementById('loadingIndicator').style.display = 'none';
+    }
+}
+
+function showPreview(note) {
+    // Populate preview
+    document.getElementById('previewTitle').value = note.title;
+    document.getElementById('previewContent').textContent = note.content;
+    
+    // Display tags
+    const tagsContainer = document.getElementById('previewTags');
+    tagsContainer.innerHTML = '';
+    
+    if (note.tags) {
+        const tags = note.tags.split(',').map(t => t.trim()).filter(t => t);
+        tags.forEach(tag => {
+            const tagSpan = document.createElement('span');
+            tagSpan.className = 'preview-tag';
+            tagSpan.textContent = tag;
+            tagsContainer.appendChild(tagSpan);
+        });
+    }
+    
+    // Hide input form, show preview
+    document.getElementById('inputForm').style.display = 'none';
+    document.getElementById('previewSection').style.display = 'block';
+}
+
+async function saveNote() {
+    if (!generatedNoteData) {
+        alert('No note to save');
+        return;
+    }
+    
+    // Show loading
+    document.getElementById('loadingIndicator').style.display = 'flex';
+    
+    try {
+        // Save note to database
+        const formData = new FormData();
+        formData.append('title', generatedNoteData.title);
+        formData.append('content', generatedNoteData.content);
+        formData.append('tags', generatedNoteData.tags);
+        formData.append('category', ''); // Empty by default
+        
+        const response = await fetch('/add', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.note_id) {
+            // Redirect to edit page for the newly created note
+            window.location.href = `/edit/${data.note_id}`;
+        } else {
+            alert('Failed to save note');
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+    } catch (error) {
+        alert('Error saving note: ' + error.message);
+        document.getElementById('loadingIndicator').style.display = 'none';
+    }
+}
+
+function regenerate() {
+    // Reset and regenerate
+    document.getElementById('previewSection').style.display = 'none';
+    document.getElementById('inputForm').style.display = 'block';
+    document.getElementById('generateBtn').disabled = false;
+    generatedNoteData = null;
+}
+
+function cancelGeneration() {
+    if (confirm('Are you sure you want to cancel? The generated note will be lost.')) {
+        window.location.href = '/';
+    }
+}
+</script>
+{% endblock %}
