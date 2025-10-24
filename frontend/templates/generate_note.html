@@ -13,8 +13,17 @@
     <div id="inputForm" class="generate-form">
         <div class="form-group">
             <label for="description">Describe what you want to note (in natural language):</label>
-            <textarea id="description" class="form-textarea" rows="6" placeholder="Example: 3 items to bring for Badminton game tomorrow" autofocus></textarea>
-            <small class="form-help">Be as detailed or brief as you like. The AI will structure it into a proper note.</small>
+            <textarea id="description" class="form-textarea" rows="6" placeholder='Example: "Badminton tmr 5pm @polyu" or "Meeting with John about Q1 budget on Friday"' autofocus></textarea>
+            <small class="form-help">Be brief and natural. AI will extract and structure it into a complete note with title, full sentences, and tags (max 3).</small>
+            <div class="examples-hint">
+                <strong>💡 Try these examples:</strong>
+                <ul>
+                    <li>"Dentist appointment next Tuesday 3pm"</li>
+                    <li>"Buy milk eggs bread at supermarket"</li>
+                    <li>"Project deadline Friday need to finish report"</li>
+                    <li>"Gym workout 6am Monday chest and arms"</li>
+                </ul>
+            </div>
         </div>
 
         <div class="form-group">
@@ -51,8 +60,16 @@
             </div>
 
             <div class="form-group">
-                <label>Tags:</label>
+                <label>Tags (max 3):</label>
                 <div id="previewTags" class="preview-tags"></div>
+            </div>
+
+            <div class="form-group" id="previewDateTimeGroup" style="display: none;">
+                <label>📅 Event Date & Time:</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="date" id="previewEventDate" class="form-input" style="flex: 1;">
+                    <input type="time" id="previewEventTime" class="form-input" style="flex: 1;">
+                </div>
             </div>
         </div>
 
@@ -197,6 +214,32 @@
     margin-top: 4px;
     display: block;
 }
+
+.examples-hint {
+    background: #f8f9fa;
+    border-left: 4px solid #667eea;
+    padding: 12px 16px;
+    margin-top: 12px;
+    border-radius: 4px;
+}
+
+.examples-hint strong {
+    color: #667eea;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.examples-hint ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.examples-hint li {
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
 </style>
 
 {% endblock %}
@@ -269,6 +312,21 @@ function showPreview(note) {
         });
     }
     
+    // Display date and time if available
+    const dateTimeGroup = document.getElementById('previewDateTimeGroup');
+    const eventDateInput = document.getElementById('previewEventDate');
+    const eventTimeInput = document.getElementById('previewEventTime');
+    
+    if (note.event_date || note.event_time) {
+        dateTimeGroup.style.display = 'block';
+        eventDateInput.value = note.event_date || '';
+        eventTimeInput.value = note.event_time || '';
+    } else {
+        dateTimeGroup.style.display = 'none';
+        eventDateInput.value = '';
+        eventTimeInput.value = '';
+    }
+    
     // Hide input form, show preview
     document.getElementById('inputForm').style.display = 'none';
     document.getElementById('previewSection').style.display = 'block';
@@ -284,12 +342,18 @@ async function saveNote() {
     document.getElementById('loadingIndicator').style.display = 'flex';
     
     try {
+        // Get updated date and time from inputs (user can modify them)
+        const eventDate = document.getElementById('previewEventDate').value || '';
+        const eventTime = document.getElementById('previewEventTime').value || '';
+        
         // Save note to database
         const formData = new FormData();
         formData.append('title', generatedNoteData.title);
         formData.append('content', generatedNoteData.content);
         formData.append('tags', generatedNoteData.tags);
         formData.append('category', ''); // Empty by default
+        formData.append('event_date', eventDate);
+        formData.append('event_time', eventTime);
         
         const response = await fetch('/add', {
             method: 'POST',

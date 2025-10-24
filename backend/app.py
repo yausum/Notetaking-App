@@ -292,35 +292,65 @@ def api_generate_note():
         if not description:
             return jsonify({'error': 'No description provided'}), 400
         
-        # Create prompt for generating structured note
+        # System prompt as specified with date and time extraction
+        system_prompt = f"""Extract the user's notes into the following structured fields:
+1. Title: A concise title of the notes less than 5 words
+2. Notes: The notes based on user input written in full sentences.
+3. Tags (A list): At most 3 Keywords or tags that categorize the content of the notes.
+4. EventDate (optional): Extract date if mentioned (format: YYYY-MM-DD). Use null if not available.
+5. EventTime (optional): Extract time if mentioned (format: HH:MM in 24-hour). Use null if not available.
+Output in JSON format without ```json. Output title and notes in the language: {language}.
+
+Date parsing rules:
+- "tomorrow" = next day
+- "next Monday/Tuesday/etc" = next occurrence of that day
+- "Jan 15", "15 Jan", "January 15" = current year if not specified
+- If only day mentioned (e.g., "Friday"), use next occurrence
+
+Time parsing rules:
+- "5pm" = "17:00"
+- "9am" = "09:00"
+- "noon" = "12:00"
+- "midnight" = "00:00"
+
+Example:
+Input: "Badminton tmr 5pm @polyu".
+Output:
+{{
+"Title": "Badminton at PolyU",
+"Notes": "Remember to play badminton at 5pm tomorrow at PolyU.",
+"Tags": ["badminton", "sports"],
+"EventDate": "2025-10-25",
+"EventTime": "17:00"
+}}
+
+Example without date/time:
+Input: "Buy milk and eggs".
+Output:
+{{
+"Title": "Shopping List",
+"Notes": "Remember to buy milk and eggs.",
+"Tags": ["shopping", "groceries"],
+"EventDate": null,
+"EventTime": null
+}}"""
+        
+        # Create messages for LLM
         messages = [
             {
                 "role": "system",
-                "content": f"""You are a helpful assistant that creates well-structured notes from natural language descriptions.
-Generate a note in {language} with the following structure:
-1. A clear, concise title (one line)
-2. Well-organized content with proper formatting
-3. Suggest 3-5 relevant tags (comma-separated)
-
-Format your response as JSON with this exact structure:
-{{
-    "title": "Note title here",
-    "content": "Detailed content here with proper formatting and line breaks",
-    "tags": "tag1, tag2, tag3"
-}}
-
-Make the content clear, organized, and useful. Use bullet points or numbered lists when appropriate."""
+                "content": system_prompt
             },
             {
                 "role": "user",
-                "content": f"Create a note about: {description}"
+                "content": description
             }
         ]
         
         from backend.llm import call_llm_model
         import json
         
-        response_text = call_llm_model(messages, temperature=0.7)
+        response_text = call_llm_model(messages, temperature=0.3)
         
         # Try to parse JSON response
         try:
@@ -330,21 +360,53 @@ Make the content clear, organized, and useful. Use bullet points or numbered lis
             
             if start_idx != -1 and end_idx > start_idx:
                 json_str = response_text[start_idx:end_idx]
-                note_data = json.loads(json_str)
+                note_data_raw = json.loads(json_str)
+                
+                # Convert to our database format
+                # Expected keys: Title, Notes, Tags (array), EventDate, EventTime
+                title = note_data_raw.get('Title', note_data_raw.get('title', 'Generated Note'))
+                notes = note_data_raw.get('Notes', note_data_raw.get('notes', note_data_raw.get('content', '')))
+                tags = note_data_raw.get('Tags', note_data_raw.get('tags', []))
+                event_date = note_data_raw.get('EventDate', note_data_raw.get('event_date', None))
+                event_time = note_data_raw.get('EventTime', note_data_raw.get('event_time', None))
+                
+                # Convert tags array to comma-separated string
+                if isinstance(tags, list):
+                    tags_str = ', '.join(tags)
+                else:
+                    tags_str = str(tags)
+                
+                # Handle null values for date/time
+                if event_date == 'null' or event_date == '':
+                    event_date = None
+                if event_time == 'null' or event_time == '':
+                    event_time = None
+                
+                note_data = {
+                    'title': title,
+                    'content': notes,
+                    'tags': tags_str,
+                    'event_date': event_date,
+                    'event_time': event_time
+                }
             else:
                 # Fallback: create structure from raw response
                 lines = response_text.strip().split('\n')
                 note_data = {
                     'title': lines[0] if lines else 'Generated Note',
                     'content': '\n'.join(lines[1:]) if len(lines) > 1 else response_text,
-                    'tags': ''
+                    'tags': '',
+                    'event_date': None,
+                    'event_time': None
                 }
         except:
             # Fallback: use raw response
             note_data = {
                 'title': 'Generated Note',
                 'content': response_text,
-                'tags': ''
+                'tags': '',
+                'event_date': None,
+                'event_time': None
             }
         
         return jsonify({
