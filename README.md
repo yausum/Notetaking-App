@@ -27,19 +27,29 @@ Frontend (HTML/CSS/JS) ↔ Flask Backend ↔ SQLite Database
 
 ```
 Notetaking-App/
-├── app.py              # Flask backend server
-├── requirements.txt    # Python dependencies
-├── notes.db           # SQLite database (auto-generated)
-├── static/
-│   ├── style.css      # CSS styling
-│   └── script.js      # JavaScript interactions
-└── templates/
-    ├── base.html       # Base template (master layout)
-    ├── index.html      # Homepage (all notes)
-    ├── add_note.html   # Create new note form
-    ├── edit_note.html  # Edit existing note form
-    ├── view_note.html  # View single note
-    └── search.html     # Search results page
+├── backend/
+│   ├── app.py              # Flask backend server
+│   └── doc.md              # Backend documentation
+├── frontend/
+│   ├── static/
+│   │   ├── style.css       # CSS styling
+│   │   └── script.js       # JavaScript interactions
+│   ├── templates/
+│   │   ├── base.html       # Base template (master layout)
+│   │   ├── index.html      # Homepage (all notes)
+│   │   ├── add_note.html   # Create new note form
+│   │   ├── edit_note.html  # Edit existing note form
+│   │   ├── view_note.html  # View single note
+│   │   └── search.html     # Search results page
+│   └── doc.md              # Frontend documentation
+├── database/
+│   ├── notes.db            # SQLite database (auto-generated)
+│   └── doc.md              # Database documentation
+├── run.py                  # Main entry point to run the app
+├── requirements.txt        # Python dependencies
+├── STRUCTURE.md            # Architecture documentation
+├── .gitignore              # Git ignore rules
+└── README.md               # This file
 ```
 
 ## 🚀 Getting Started
@@ -64,6 +74,12 @@ Notetaking-App/
 
 3. **Run the application:**
    ```bash
+   python run.py
+   ```
+   
+   Or alternatively, run directly from the backend folder:
+   ```bash
+   cd backend
    python app.py
    ```
 
@@ -72,7 +88,7 @@ Notetaking-App/
    http://localhost:5000
    ```
 
-The database (`notes.db`) will be automatically created on first run.
+The database (`database/notes.db`) will be automatically created on first run.
 
 ## 🎯 Key Technologies
 
@@ -90,7 +106,7 @@ The database (`notes.db`) will be automatically created on first run.
 
 ## 📚 Application Components
 
-### 1. Backend (`app.py`)
+### 1. Backend (`backend/app.py`)
 
 The Flask application handles all server-side logic:
 
@@ -119,7 +135,7 @@ CREATE TABLE notes (
 | `/search` | GET | Search notes by keywords |
 | `/api/notes` | GET | API endpoint returning JSON data |
 
-### 2. Templates
+### 2. Templates (`frontend/templates/`)
 
 #### `base.html` - Master Template
 
@@ -176,7 +192,7 @@ Shows notes matching the search query:
 - Displays results count
 - Empty state for no results
 
-### 3. Styling (`style.css`)
+### 3. Styling (`frontend/static/style.css`)
 
 **Design System:**
 - CSS custom properties for consistent colors
@@ -207,7 +223,7 @@ Shows notes matching the search query:
 }
 ```
 
-### 4. JavaScript (`script.js`)
+### 4. JavaScript (`frontend/static/script.js`)
 
 Client-side interactivity:
 
@@ -286,13 +302,13 @@ Searches in:
 
 ## 🛠️ Development
 
-### File Structure
+### Folder Structure
 
-- **Backend Logic**: `app.py`
-- **Frontend Templates**: `templates/*.html`
-- **Styling**: `static/style.css`
-- **Interactivity**: `static/script.js`
-- **Database**: `notes.db` (auto-generated)
+- **Backend Logic**: `backend/app.py`
+- **Frontend Templates**: `frontend/templates/*.html`
+- **Styling**: `frontend/static/style.css`
+- **Interactivity**: `frontend/static/script.js`
+- **Database**: `database/notes.db` (auto-generated)
 
 ### Dependencies
 
