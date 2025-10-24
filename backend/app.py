@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 from supabase import create_client, Client
 from datetime import datetime
 import os
@@ -14,7 +14,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Configure Flask to use frontend folder for templates and static files
 app = Flask(__name__,
             template_folder=os.path.join(BASE_DIR, 'frontend', 'templates'),
-            static_folder=os.path.join(BASE_DIR, 'frontend', 'static'))
+            static_folder=os.path.join(BASE_DIR, 'frontend', 'static'),
+            static_url_path='/static')
 app.secret_key = 'your-secret-key-here'
 
 # Supabase configuration
@@ -23,6 +24,13 @@ SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
 # Initialize Supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Explicitly serve static files for Vercel
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    """Serve static files (CSS, JS, images)"""
+    static_dir = os.path.join(BASE_DIR, 'frontend', 'static')
+    return send_from_directory(static_dir, filename)
 
 def init_db():
     """Initialize the Supabase database with the notes table"""

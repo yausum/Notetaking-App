@@ -8,15 +8,8 @@
   ],
   "routes": [
     {
-      "src": "/static/(.*)",
-      "dest": "/frontend/static/$1"
-    },
-    {
       "src": "/(.*)",
       "dest": "run.py"
     }
-  ],
-  "env": {
-    "FLASK_ENV": "production"
-  }
+  ]
 }
