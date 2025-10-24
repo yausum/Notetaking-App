@@ -21,6 +21,24 @@
         </div>
 
         <div class="form-group">
+            <label for="tags">Tags</label>
+            <input type="text" id="tags" name="tags" class="form-input" value="{{ note['tags'] if note['tags'] else '' }}" placeholder="e.g., important, urgent, meeting (comma-separated)">
+            <small class="form-help">Separate multiple tags with commas</small>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="event_date">Event Date</label>
+                <input type="date" id="event_date" name="event_date" class="form-input" value="{{ note['event_date'] if note['event_date'] else '' }}">
+            </div>
+
+            <div class="form-group">
+                <label for="event_time">Event Time</label>
+                <input type="time" id="event_time" name="event_time" class="form-input" value="{{ note['event_time'] if note['event_time'] else '' }}">
+            </div>
+        </div>
+
+        <div class="form-group">
             <label for="content">Content *</label>
             <textarea id="content" name="content" class="form-textarea" rows="12" required>{{ note['content'] }}</textarea>
             <div class="character-count">

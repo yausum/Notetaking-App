@@ -28,6 +28,9 @@ def init_db():
             title TEXT NOT NULL,
             content TEXT NOT NULL,
             category TEXT,
+            tags TEXT,
+            event_date DATE,
+            event_time TIME,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -48,14 +51,17 @@ def add_note():
         title = request.form['title']
         content = request.form['content']
         category = request.form.get('category', '')
+        tags = request.form.get('tags', '')
+        event_date = request.form.get('event_date', '')
+        event_time = request.form.get('event_time', '')
         
         if not title or not content:
             flash('Title and content are required!', 'error')
             return redirect(url_for('add_note'))
         
         conn = get_db_connection()
-        conn.execute('INSERT INTO notes (title, content, category) VALUES (?, ?, ?)',
-                     (title, content, category))
+        conn.execute('INSERT INTO notes (title, content, category, tags, event_date, event_time) VALUES (?, ?, ?, ?, ?, ?)',
+                     (title, content, category, tags, event_date, event_time))
         conn.commit()
         conn.close()
         
@@ -90,13 +96,16 @@ def edit_note(id):
         title = request.form['title']
         content = request.form['content']
         category = request.form.get('category', '')
+        tags = request.form.get('tags', '')
+        event_date = request.form.get('event_date', '')
+        event_time = request.form.get('event_time', '')
         
         if not title or not content:
             flash('Title and content are required!', 'error')
             return redirect(url_for('edit_note', id=id))
         
-        conn.execute('UPDATE notes SET title = ?, content = ?, category = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                     (title, content, category, id))
+        conn.execute('UPDATE notes SET title = ?, content = ?, category = ?, tags = ?, event_date = ?, event_time = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                     (title, content, category, tags, event_date, event_time, id))
         conn.commit()
         conn.close()
         
@@ -123,8 +132,8 @@ def search():
     if query:
         conn = get_db_connection()
         notes = conn.execute(
-            'SELECT * FROM notes WHERE title LIKE ? OR content LIKE ? OR category LIKE ? ORDER BY updated_at DESC',
-            (f'%{query}%', f'%{query}%', f'%{query}%')
+            'SELECT * FROM notes WHERE title LIKE ? OR content LIKE ? OR category LIKE ? OR tags LIKE ? ORDER BY updated_at DESC',
+            (f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%')
         ).fetchall()
         conn.close()
     else:

@@ -428,6 +428,101 @@ main {
     gap: 1rem;
 }
 
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-help {
+    font-size: 0.875rem;
+    color: var(--secondary-color);
+    font-style: italic;
+}
+
+/* Tags Styling */
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.tag-badge {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 0.35rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.tag-badge-small {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 0.25rem 0.6rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.note-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Event Info Styling */
+.event-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background-color: #fff3e0;
+    border-radius: 6px;
+    border-left: 3px solid #ff9800;
+}
+
+.event-icon {
+    font-size: 1.2rem;
+}
+
+.event-date {
+    font-weight: 600;
+    color: #f57c00;
+}
+
+.event-time {
+    color: #e65100;
+    margin-left: 0.5rem;
+}
+
+.note-event-info {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    background-color: #fff3e0;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.event-icon-small {
+    font-size: 0.9rem;
+}
+
+.event-date-small {
+    font-weight: 600;
+    color: #f57c00;
+}
+
+.event-time-small {
+    color: #e65100;
+}
+
 /* Note View */
 .note-view {
     max-width: 900px;
@@ -534,6 +629,10 @@ footer {
 
     .form-actions {
         flex-direction: column;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
     }
 
     .page-header h1 {

@@ -11,6 +11,24 @@
                 {% if note['category'] %}
                     <span class="category-badge-large">{{ note['category'] }}</span>
                 {% endif %}
+                {% if note['tags'] %}
+                    <div class="tags-container">
+                        {% for tag in note['tags'].split(',') %}
+                            <span class="tag-badge">{{ tag.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if note['event_date'] or note['event_time'] %}
+                    <div class="event-info">
+                        <span class="event-icon">📅</span>
+                        {% if note['event_date'] %}
+                            <span class="event-date">{{ note['event_date'] }}</span>
+                        {% endif %}
+                        {% if note['event_time'] %}
+                            <span class="event-time">🕐 {{ note['event_time'] }}</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
                 <span class="note-date-large">Created: {{ note['created_at'] }}</span>
                 {% if note['updated_at'] != note['created_at'] %}
                     <span class="note-date-large">Updated: {{ note['updated_at'] }}</span>

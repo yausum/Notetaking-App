@@ -18,6 +18,27 @@
                     <span class="category-badge">{{ note['category'] }}</span>
                 {% endif %}
             </div>
+            {% if note['tags'] %}
+            <div class="note-tags">
+                {% for tag in note['tags'].split(',')[:3] %}
+                    <span class="tag-badge-small">{{ tag.strip() }}</span>
+                {% endfor %}
+                {% if note['tags'].split(',')|length > 3 %}
+                    <span class="tag-badge-small">+{{ note['tags'].split(',')|length - 3 }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% if note['event_date'] or note['event_time'] %}
+            <div class="note-event-info">
+                <span class="event-icon-small">📅</span>
+                {% if note['event_date'] %}
+                    <span class="event-date-small">{{ note['event_date'] }}</span>
+                {% endif %}
+                {% if note['event_time'] %}
+                    <span class="event-time-small">{{ note['event_time'] }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
             <div class="note-preview">
                 {{ note['content'][:150] }}{% if note['content']|length > 150 %}...{% endif %}
             </div>
