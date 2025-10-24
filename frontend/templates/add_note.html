@@ -10,6 +10,18 @@
 
 <div class="form-container">
     <form method="POST" action="{{ url_for('add_note') }}" class="note-form">
+        <!-- Translation Controls -->
+        <div class="translation-controls">
+            <div class="translation-control-group">
+                <select id="targetLanguage" class="form-select">
+                    <option value="English">English</option>
+                    <option value="Chinese">Chinese (中文)</option>
+                    
+                </select>
+                <button type="button" class="btn-translate" onclick="translateFields()">🌐 Translate</button>
+            </div>
+            <small class="form-help">Translate title and content to selected language</small>
+        </div>
         <div class="form-group">
             <label for="title">Title *</label>
             <input type="text" id="title" name="title" class="form-input" required autofocus>
@@ -22,8 +34,11 @@
 
         <div class="form-group">
             <label for="tags">Tags</label>
-            <input type="text" id="tags" name="tags" class="form-input" placeholder="e.g., important, urgent, meeting (comma-separated)">
-            <small class="form-help">Separate multiple tags with commas</small>
+            <div class="tags-input-group">
+                <input type="text" id="tags" name="tags" class="form-input" placeholder="e.g., important, urgent, meeting">
+                <button type="button" class="btn-generate" onclick="generateTags()">Generate</button>
+            </div>
+            <small class="form-help">Separate multiple tags with commas, or auto-generate from title and content</small>
         </div>
 
         <div class="form-row">
@@ -46,6 +61,8 @@
             </div>
         </div>
 
+
+
         <div class="form-actions">
             <button type="submit" class="btn-primary">Save Note</button>
             <a href="{{ url_for('index') }}" class="btn-secondary">Cancel</a>
@@ -58,9 +75,131 @@
 <script>
 const contentTextarea = document.getElementById('content');
 const charCount = document.getElementById('charCount');
+const titleInput = document.getElementById('title');
+const tagsInput = document.getElementById('tags');
 
 contentTextarea.addEventListener('input', function() {
     charCount.textContent = this.value.length;
 });
+
+async function generateTags() {
+    const title = titleInput.value.trim();
+    const content = contentTextarea.value.trim();
+    
+    if (!title && !content) {
+        alert('Please enter a title or content first');
+        return;
+    }
+    
+    // Disable button and show loading
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Generating...';
+    
+    try {
+        const response = await fetch('/api/generate-tags', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: title,
+                content: content,
+                max_tags: 5
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            tagsInput.value = data.tags;
+            // Flash success
+            btn.innerHTML = '✓ Done';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 2000);
+        } else {
+            alert('Failed to generate tags: ' + data.error);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+async function translateFields() {
+    const title = titleInput.value.trim();
+    const content = contentTextarea.value.trim();
+    const targetLanguage = document.getElementById('targetLanguage').value;
+    
+    if (!title && !content) {
+        alert('Please enter a title or content to translate');
+        return;
+    }
+    
+    // Disable button and show loading
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Translating...';
+    
+    try {
+        // Translate title if exists
+        if (title) {
+            const titleResponse = await fetch('/api/translate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: title,
+                    target_language: targetLanguage
+                })
+            });
+            
+            const titleData = await titleResponse.json();
+            if (titleData.success) {
+                titleInput.value = titleData.translated;
+            }
+        }
+        
+        // Translate content if exists
+        if (content) {
+            const contentResponse = await fetch('/api/translate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: content,
+                    target_language: targetLanguage
+                })
+            });
+            
+            const contentData = await contentResponse.json();
+            if (contentData.success) {
+                contentTextarea.value = contentData.translated;
+                charCount.textContent = contentData.translated.length;
+            }
+        }
+        
+        // Flash success
+        btn.innerHTML = '✓ Translated';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 2000);
+        
+    } catch (error) {
+        alert('Translation error: ' + error.message);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
 </script>
 {% endblock %}

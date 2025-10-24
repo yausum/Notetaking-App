@@ -37,12 +37,22 @@
         </div>
         <div class="note-header-actions">
             <a href="{{ url_for('edit_note', id=note['id']) }}" class="btn-primary">Edit</a>
+            <button class="btn-secondary" onclick="showTranslateModal()">🌐 Translate</button>
             <button class="btn-danger" onclick="confirmDelete({{ note['id'] }})">Delete</button>
         </div>
     </div>
 
-    <div class="note-content-display">
+    <div class="note-content-display" id="noteContent">
         {{ note['content']|replace('\n', '<br>')|safe }}
+    </div>
+
+    <!-- Translation Display -->
+    <div id="translationResult" class="translation-result" style="display: none;">
+        <div class="translation-header">
+            <h3>Translation</h3>
+            <button class="btn-small" onclick="closeTranslation()">✕</button>
+        </div>
+        <div class="translation-content" id="translatedContent"></div>
     </div>
 
     <div class="note-footer">
@@ -56,12 +66,59 @@
 
 {% block scripts %}
 <script>
+const originalContent = {{ note['content']|tojson }};
+
 function confirmDelete(noteId) {
     if (confirm('Are you sure you want to delete this note? This action cannot be undone.')) {
         const form = document.getElementById('deleteForm');
         form.action = `/delete/${noteId}`;
         form.submit();
     }
+}
+
+function showTranslateModal() {
+    const languages = ['Chinese', 'English', 'Spanish', 'French', 'German', 'Japanese', 'Korean'];
+    const language = prompt('Enter target language:\n' + languages.join(', '), 'Chinese');
+    
+    if (language) {
+        translateNote(language);
+    }
+}
+
+async function translateNote(targetLanguage) {
+    const translationResult = document.getElementById('translationResult');
+    const translatedContent = document.getElementById('translatedContent');
+    
+    // Show loading
+    translationResult.style.display = 'block';
+    translatedContent.innerHTML = '<div class="loading">🔄 Translating to ' + targetLanguage + '...</div>';
+    
+    try {
+        const response = await fetch('/api/translate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                text: originalContent,
+                target_language: targetLanguage
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            translatedContent.innerHTML = '<p>' + data.translated.replace(/\n/g, '<br>') + '</p>';
+        } else {
+            translatedContent.innerHTML = '<div class="error">❌ Translation failed: ' + data.error + '</div>';
+        }
+    } catch (error) {
+        translatedContent.innerHTML = '<div class="error">❌ Error: ' + error.message + '</div>';
+    }
+}
+
+function closeTranslation() {
+    document.getElementById('translationResult').style.display = 'none';
 }
 </script>
 {% endblock %}

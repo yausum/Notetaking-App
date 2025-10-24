@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 import sqlite3
 from datetime import datetime
 import os
+from backend.llm import translate_text, generate_tags, summarize_note
 
 # Get the base directory (project root)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -179,6 +180,94 @@ def api_notes():
     conn.close()
     
     return jsonify([dict(note) for note in notes])
+
+# ============================================
+# LLM API Routes
+# ============================================
+
+@app.route('/api/translate', methods=['POST'])
+def api_translate():
+    """
+    Translate text to target language
+    POST body: {"text": "content", "target_language": "Chinese"}
+    """
+    try:
+        data = request.get_json()
+        text = data.get('text', '')
+        target_language = data.get('target_language', 'Chinese')
+        
+        if not text:
+            return jsonify({'error': 'No text provided'}), 400
+        
+        translated_text = translate_text(text, target_language)
+        
+        return jsonify({
+            'success': True,
+            'original': text,
+            'translated': translated_text,
+            'target_language': target_language
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/generate-tags', methods=['POST'])
+def api_generate_tags():
+    """
+    Generate tags from title and content
+    POST body: {"title": "...", "content": "...", "max_tags": 5}
+    """
+    try:
+        data = request.get_json()
+        title = data.get('title', '')
+        content = data.get('content', '')
+        max_tags = data.get('max_tags', 5)
+        
+        if not title and not content:
+            return jsonify({'error': 'Title or content required'}), 400
+        
+        tags = generate_tags(title, content, max_tags)
+        
+        return jsonify({
+            'success': True,
+            'tags': tags
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/summarize', methods=['POST'])
+def api_summarize():
+    """
+    Summarize note content
+    POST body: {"content": "...", "max_length": 100}
+    """
+    try:
+        data = request.get_json()
+        content = data.get('content', '')
+        max_length = data.get('max_length', 100)
+        
+        if not content:
+            return jsonify({'error': 'No content provided'}), 400
+        
+        summary = summarize_note(content, max_length)
+        
+        return jsonify({
+            'success': True,
+            'summary': summary
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 if __name__ == '__main__':
     init_db()
