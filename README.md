@@ -2,19 +2,24 @@
 
 COMP5421 Lab2 exercise: Create a notetaking app and deploy it to Vercel
 
-A full-stack web application built with Flask, SQLite, HTML, CSS, and JavaScript for managing personal notes with CRUD (Create, Read, Update, Delete) functionality.
+A full-stack web application built with Flask, Supabase PostgreSQL, HTML, CSS, and JavaScript for managing personal notes with CRUD (Create, Read, Update, Delete) functionality and AI-powered features.
 
 ## 🏗️ Architecture Overview
 
 ```
-Frontend (HTML/CSS/JS) ↔ Flask Backend ↔ SQLite Database
+Frontend (HTML/CSS/JS) ↔ Flask Backend ↔ Supabase PostgreSQL Database
+                              ↓
+                    OpenAI/GitHub Models API
 ```
 
 ## ✨ Features
 
+### Core Features
 - ✅ Create, view, edit, and delete notes
-- ✅ Organize notes with categories
-- ✅ Search across title/content/category
+- ✅ Organize notes with categories and tags
+- ✅ Search across title/content/category/tags
+- ✅ Event date and time tracking
+- ✅ Multiple sorting options (updated, created, event date, title)
 - ✅ Responsive design (mobile-friendly)
 - ✅ Keyboard shortcuts (Ctrl+K for search, Ctrl+N for new note)
 - ✅ Auto-hiding flash messages
@@ -23,12 +28,20 @@ Frontend (HTML/CSS/JS) ↔ Flask Backend ↔ SQLite Database
 - ✅ Timestamps for creation and updates
 - ✅ Clean, modern UI with animations
 
+### AI-Powered Features 🤖
+- ✅ **Smart Note Generation**: Convert natural language to structured notes
+- ✅ **Multi-language Translation**: Translate notes to 10 languages
+- ✅ **Auto-tagging**: Generate relevant tags from content
+- ✅ **Note Summarization**: Create concise summaries
+- ✅ **Date/Time Extraction**: Automatically parse dates and times from text
+
 ## 📂 Project Structure
 
 ```
 Notetaking-App/
 ├── backend/
-│   ├── app.py              # Flask backend server
+│   ├── app.py              # Flask backend server with routes
+│   ├── llm.py              # LLM integration (OpenAI/GitHub Models)
 │   └── doc.md              # Backend documentation
 ├── frontend/
 │   ├── static/
@@ -40,16 +53,18 @@ Notetaking-App/
 │   │   ├── add_note.html   # Create new note form
 │   │   ├── edit_note.html  # Edit existing note form
 │   │   ├── view_note.html  # View single note
+│   │   ├── generate_note.html  # AI note generation
 │   │   └── search.html     # Search results page
 │   └── doc.md              # Frontend documentation
 ├── database/
-│   ├── notes.db            # SQLite database (auto-generated)
 │   └── doc.md              # Database documentation
+├── init_supabase.py        # Database initialization script
 ├── run.py                  # Main entry point to run the app
 ├── requirements.txt        # Python dependencies
+├── .env                    # Environment variables (not in git)
 ├── STRUCTURE.md            # Architecture documentation
-├── .gitignore              # Git ignore rules
-└── README.md               # This file
+├── MIGRATION_GUIDE.md      # SQLite to PostgreSQL migration guide
+└── API_DOCUMENTATION.md    # API endpoints documentation
 ```
 
 ## 🚀 Getting Started
@@ -58,6 +73,7 @@ Notetaking-App/
 
 - Python 3.7+
 - pip (Python package manager)
+- Supabase account (free tier available)
 
 ### Installation
 
@@ -72,7 +88,31 @@ Notetaking-App/
    pip install -r requirements.txt
    ```
 
-3. **Run the application:**
+3. **Set up Supabase:**
+   - Create a project at [Supabase](https://supabase.com)
+   - Get your database connection string from Project Settings > Database
+   - Copy the "Connection pooling" URI (Transaction mode)
+
+4. **Configure environment variables:**
+   
+   Create a `.env` file in the project root:
+   ```env
+   # GitHub Models API (for AI features)
+   GITHUB_TOKEN=your_github_token_here
+   OPENAI_MODEL=openai/gpt-4.1-mini
+   
+   # Supabase PostgreSQL
+   DATABASE_URL=postgresql://postgres.xxxxx:password@host:6543/postgres
+   ```
+
+5. **Initialize the database:**
+   ```bash
+   python init_supabase.py
+   ```
+   
+   This will create the `notes` table and indexes in your Supabase database.
+
+6. **Run the application:**
    ```bash
    python run.py
    ```
@@ -83,26 +123,35 @@ Notetaking-App/
    python app.py
    ```
 
-4. **Open your browser:**
+7. **Open your browser:**
    ```
    http://localhost:5000
    ```
 
-The database (`database/notes.db`) will be automatically created on first run.
+### Migration from SQLite
+
+If you're upgrading from the SQLite version, see [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for detailed instructions.
 
 ## 🎯 Key Technologies
 
 ### Backend
 
-- **Flask** - Python web framework for routing, templates, and database operations
-- **SQLite** - Lightweight file-based database for data persistence
+- **Flask 3.0.0** - Python web framework for routing, templates, and database operations
+- **PostgreSQL (Supabase)** - Cloud-hosted relational database with real-time capabilities
+- **psycopg2** - PostgreSQL adapter for Python
+- **OpenAI API** - AI-powered note generation and translation
 
 ### Frontend
 
 - **HTML5** - Structure and content
 - **CSS3** - Styling with Grid/Flexbox layouts and animations
-- **JavaScript** - Client-side interactivity and form validation
+- **JavaScript (ES6+)** - Client-side interactivity, async/await API calls
 - **Jinja2** - Template engine for dynamic HTML rendering
+
+### AI Integration
+
+- **GitHub Models** - Access to OpenAI GPT-4 models
+- **OpenAI SDK** - Python client for API calls
 
 ## 📚 Application Components
 
@@ -112,24 +161,36 @@ The Flask application handles all server-side logic:
 
 #### Database Schema
 
-```python
+```sql
 CREATE TABLE notes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     category TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
+    tags TEXT,
+    event_date DATE,
+    event_time TIME,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
 ```
 
 #### Routes
 
 | Route | Method | Purpose |
 |-------|--------|---------|
-| `/` | GET | Display all notes (homepage) |
+| `/` | GET | Display all notes (homepage) with sorting |
 | `/add` | GET, POST | Show add note form / Save new note |
+| `/generate` | GET | AI-powered note generation interface |
 | `/note/<id>` | GET | View a specific note |
+| `/edit/<id>` | GET, POST | Edit form / Update note |
+| `/delete/<id>` | POST | Delete a note |
+| `/search` | GET | Search notes by query |
+| `/api/notes` | GET | JSON API for all notes |
+| `/api/translate` | POST | Translate note content |
+| `/api/generate-note` | POST | Generate structured note from text |
+| `/api/generate-tags` | POST | Auto-generate tags |
+| `/api/summarize` | POST | Summarize note content |
 | `/edit/<id>` | GET, POST | Show edit form / Update note |
 | `/delete/<id>` | POST | Delete a note |
 | `/search` | GET | Search notes by keywords |
