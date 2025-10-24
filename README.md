@@ -29,7 +29,7 @@ Frontend (HTML/CSS/JS) ↔ Flask Backend ↔ SQLite Database
 Notetaking-App/
 ├── backend/
 │   ├── app.py              # Flask backend server
-│   └── README.md           # Backend documentation
+│   └── doc.md              # Backend documentation
 ├── frontend/
 │   ├── static/
 │   │   ├── style.css       # CSS styling
@@ -41,13 +41,15 @@ Notetaking-App/
 │   │   ├── edit_note.html  # Edit existing note form
 │   │   ├── view_note.html  # View single note
 │   │   └── search.html     # Search results page
-│   └── README.md           # Frontend documentation
+│   └── doc.md              # Frontend documentation
 ├── database/
 │   ├── notes.db            # SQLite database (auto-generated)
-│   └── README.md           # Database documentation
+│   └── doc.md              # Database documentation
 ├── run.py                  # Main entry point to run the app
 ├── requirements.txt        # Python dependencies
-└── README.md              # This file
+├── STRUCTURE.md            # Architecture documentation
+├── .gitignore              # Git ignore rules
+└── README.md               # This file
 ```
 
 ## 🚀 Getting Started
