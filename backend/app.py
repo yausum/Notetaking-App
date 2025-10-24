@@ -3,10 +3,17 @@ import sqlite3
 from datetime import datetime
 import os
 
-app = Flask(__name__)
+# Get the base directory (project root)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Configure Flask to use frontend folder for templates and static files
+app = Flask(__name__,
+            template_folder=os.path.join(BASE_DIR, 'frontend', 'templates'),
+            static_folder=os.path.join(BASE_DIR, 'frontend', 'static'))
 app.secret_key = 'your-secret-key-here'
 
-DATABASE = 'notes.db'
+# Database path in database folder
+DATABASE = os.path.join(BASE_DIR, 'database', 'notes.db')
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
