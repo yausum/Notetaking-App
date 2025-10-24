@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - Note Taking App{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Search Results</h1>
+    {% if query %}
+        <p class="subtitle">Results for "{{ query }}"</p>
+    {% else %}
+        <p class="subtitle">Enter a search term to find notes</p>
+    {% endif %}
+</div>
+
+{% if query %}
+    {% if notes %}
+        <div class="search-results-info">
+            Found {{ notes|length }} note(s)
+        </div>
+        
+        <div class="notes-grid">
+            {% for note in notes %}
+            <div class="note-card" data-note-id="{{ note['id'] }}">
+                <div class="note-card-header">
+                    <h3 class="note-title">{{ note['title'] }}</h3>
+                    {% if note['category'] %}
+                        <span class="category-badge">{{ note['category'] }}</span>
+                    {% endif %}
+                </div>
+                <div class="note-preview">
+                    {{ note['content'][:150] }}{% if note['content']|length > 150 %}...{% endif %}
+                </div>
+                <div class="note-meta">
+                    <span class="note-date">{{ note['updated_at'] }}</span>
+                </div>
+                <div class="note-actions">
+                    <a href="{{ url_for('view_note', id=note['id']) }}" class="btn-view">View</a>
+                    <a href="{{ url_for('edit_note', id=note['id']) }}" class="btn-edit">Edit</a>
+                    <button class="btn-delete" onclick="confirmDelete({{ note['id'] }})">Delete</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <h2>No results found</h2>
+            <p>No notes match your search query "{{ query }}"</p>
+            <a href="{{ url_for('index') }}" class="btn-primary-large">Back to All Notes</a>
+        </div>
+    {% endif %}
+{% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <h2>Search your notes</h2>
+        <p>Use the search bar above to find notes</p>
+    </div>
+{% endif %}
+
+<form id="deleteForm" method="POST" style="display: none;">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(noteId) {
+    if (confirm('Are you sure you want to delete this note?')) {
+        const form = document.getElementById('deleteForm');
+        form.action = `/delete/${noteId}`;
+        form.submit();
+    }
+}
+</script>
+{% endblock %}
