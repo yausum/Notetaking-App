@@ -4,8 +4,24 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>My Notes</h1>
-    <p class="subtitle">All your notes in one place</p>
+    <div class="page-header-content">
+        <div>
+            <h1>My Notes</h1>
+            <p class="subtitle">All your notes in one place</p>
+        </div>
+        <div class="sort-controls">
+            <form method="GET" action="{{ url_for('index') }}" class="sort-form">
+                <label for="sort">Sort by:</label>
+                <select name="sort" id="sort" class="sort-select" onchange="this.form.submit()">
+                    <option value="updated" {% if sort_by == 'updated' %}selected{% endif %}>Last Updated</option>
+                    <option value="created" {% if sort_by == 'created' %}selected{% endif %}>Created Date</option>
+                    <option value="title" {% if sort_by == 'title' %}selected{% endif %}>Title (A-Z)</option>
+                    <option value="event_date" {% if sort_by == 'event_date' %}selected{% endif %}>Event Date</option>
+                    <option value="event_time" {% if sort_by == 'event_time' %}selected{% endif %}>Event Time</option>
+                </select>
+            </form>
+        </div>
+    </div>
 </div>
 
 {% if notes %}
@@ -18,6 +34,27 @@
                     <span class="category-badge">{{ note['category'] }}</span>
                 {% endif %}
             </div>
+            {% if note['tags'] %}
+            <div class="note-tags">
+                {% for tag in note['tags'].split(',')[:3] %}
+                    <span class="tag-badge-small">{{ tag.strip() }}</span>
+                {% endfor %}
+                {% if note['tags'].split(',')|length > 3 %}
+                    <span class="tag-badge-small">+{{ note['tags'].split(',')|length - 3 }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% if note['event_date'] or note['event_time'] %}
+            <div class="note-event-info">
+                <span class="event-icon-small">📅</span>
+                {% if note['event_date'] %}
+                    <span class="event-date-small">{{ note['event_date'] }}</span>
+                {% endif %}
+                {% if note['event_time'] %}
+                    <span class="event-time-small">{{ note['event_time'] }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
             <div class="note-preview">
                 {{ note['content'][:150] }}{% if note['content']|length > 150 %}...{% endif %}
             </div>

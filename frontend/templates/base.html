@@ -8,25 +8,21 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="container">
+        <div class="container navbar-container">
             <div class="nav-brand">
                 <a href="{{ url_for('index') }}">📝 Note Taking App</a>
             </div>
+            <form action="{{ url_for('search') }}" method="GET" class="navbar-search-form">
+                <input type="text" name="q" placeholder="Search notes..." class="search-input" value="{{ request.args.get('q', '') }}">
+                <button type="submit" class="btn-search">Search</button>
+            </form>
             <div class="nav-links">
                 <a href="{{ url_for('index') }}">Home</a>
+                <a href="{{ url_for('generate_note') }}" class="btn-generate-nav">🤖 Generate with AI</a>
                 <a href="{{ url_for('add_note') }}" class="btn-primary">+ New Note</a>
             </div>
         </div>
     </nav>
-
-    <div class="search-bar">
-        <div class="container">
-            <form action="{{ url_for('search') }}" method="GET" class="search-form">
-                <input type="text" name="q" placeholder="Search notes..." class="search-input" value="{{ request.args.get('q', '') }}">
-                <button type="submit" class="btn-search">Search</button>
-            </form>
-        </div>
-    </div>
 
     <main class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
