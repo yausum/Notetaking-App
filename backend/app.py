@@ -296,9 +296,10 @@ def api_generate_note():
         system_prompt = f"""Extract the user's notes into the following structured fields:
 1. Title: A concise title of the notes less than 5 words
 2. Notes: The notes based on user input written in full sentences.
-3. Tags (A list): At most 3 Keywords or tags that categorize the content of the notes.
-4. EventDate (optional): Extract date if mentioned (format: YYYY-MM-DD). Use null if not available.
-5. EventTime (optional): Extract time if mentioned (format: HH:MM in 24-hour). Use null if not available.
+3. Category: A single category that best describes the note (e.g., Work, Personal, Study, Health, Finance, Travel, Shopping, Ideas, etc.)
+4. Tags (A list): At most 3 Keywords or tags that categorize the content of the notes.
+5. EventDate (optional): Extract date if mentioned (format: YYYY-MM-DD). Use null if not available.
+6. EventTime (optional): Extract time if mentioned (format: HH:MM in 24-hour). Use null if not available.
 Output in JSON format without ```json. Output title and notes in the language: {language}.
 
 Date parsing rules:
@@ -313,12 +314,23 @@ Time parsing rules:
 - "noon" = "12:00"
 - "midnight" = "00:00"
 
+Category suggestions:
+- Work: meetings, projects, deadlines, tasks
+- Personal: appointments, reminders, personal tasks
+- Study: homework, exams, research, learning
+- Health: exercise, doctor appointments, medication
+- Finance: bills, budgets, expenses
+- Travel: trips, bookings, itineraries
+- Shopping: grocery lists, purchases
+- Ideas: brainstorming, creative thoughts
+
 Example:
 Input: "Badminton tmr 5pm @polyu".
 Output:
 {{
 "Title": "Badminton at PolyU",
 "Notes": "Remember to play badminton at 5pm tomorrow at PolyU.",
+"Category": "Personal",
 "Tags": ["badminton", "sports"],
 "EventDate": "2025-10-25",
 "EventTime": "17:00"
@@ -330,6 +342,7 @@ Output:
 {{
 "Title": "Shopping List",
 "Notes": "Remember to buy milk and eggs.",
+"Category": "Shopping",
 "Tags": ["shopping", "groceries"],
 "EventDate": null,
 "EventTime": null
@@ -363,9 +376,10 @@ Output:
                 note_data_raw = json.loads(json_str)
                 
                 # Convert to our database format
-                # Expected keys: Title, Notes, Tags (array), EventDate, EventTime
+                # Expected keys: Title, Notes, Category, Tags (array), EventDate, EventTime
                 title = note_data_raw.get('Title', note_data_raw.get('title', 'Generated Note'))
                 notes = note_data_raw.get('Notes', note_data_raw.get('notes', note_data_raw.get('content', '')))
+                category = note_data_raw.get('Category', note_data_raw.get('category', ''))
                 tags = note_data_raw.get('Tags', note_data_raw.get('tags', []))
                 event_date = note_data_raw.get('EventDate', note_data_raw.get('event_date', None))
                 event_time = note_data_raw.get('EventTime', note_data_raw.get('event_time', None))
@@ -385,6 +399,7 @@ Output:
                 note_data = {
                     'title': title,
                     'content': notes,
+                    'category': category,
                     'tags': tags_str,
                     'event_date': event_date,
                     'event_time': event_time
@@ -395,6 +410,7 @@ Output:
                 note_data = {
                     'title': lines[0] if lines else 'Generated Note',
                     'content': '\n'.join(lines[1:]) if len(lines) > 1 else response_text,
+                    'category': '',
                     'tags': '',
                     'event_date': None,
                     'event_time': None
@@ -404,6 +420,7 @@ Output:
             note_data = {
                 'title': 'Generated Note',
                 'content': response_text,
+                'category': '',
                 'tags': '',
                 'event_date': None,
                 'event_time': None
