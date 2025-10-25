@@ -33,7 +33,7 @@ Sometimes, the AI may generate errors or behave unexpectedly. By providing clear
 
 ## 🚀 Development Process and steps
 
-### Phase 1: Initial Setup (SQLite Version)
+## Phase 1: Initial Setup (SQLite Version)
 At the very beginning, I chose to use GitHub Copilot Agent Mode (Claude Sonnet 4.5) to help generate the initial setup for the note-taking application. Unfortunately, I no longer have the screenshot from this stage, but I can provide the Copilot chat history as a reference.
 
 ![alt text](./image/{71987559-E592-48EA-A71A-D0CD43DB3916}.png)
