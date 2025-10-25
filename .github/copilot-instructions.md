@@ -2,12 +2,14 @@
 
 ## 🎯 Project Overview
 
-This is a **full-stack note-taking web application** built with Flask, SQLite, and vanilla JavaScript. It features AI-powered note generation, translation, and smart categorization using OpenAI/GitHub Models API.
+This is a **full-stack note-taking web application** built with Flask, Supabase PostgreSQL, and vanilla JavaScript. It features AI-powered note generation, translation, and smart categorization using OpenAI/GitHub Models API.
 
 **Tech Stack:**
-- **Backend**: Flask 3.0.0, SQLite3, Python 3.x
+- **Backend**: Flask 3.0.0, Supabase PostgreSQL (via Python SDK), Python 3.x
 - **Frontend**: Jinja2 templates, vanilla JavaScript (ES6+), CSS3
 - **AI Integration**: OpenAI API via GitHub Models endpoint
+- **Deployment**: Vercel (serverless)
+- **Architecture**: Traditional server-side rendering with AJAX for AI features
 - **Architecture**: Traditional server-side rendering with AJAX for AI features
 
 ---
@@ -31,30 +33,34 @@ Notetaking-App/
 │       ├── view_note.html  # View single note
 │       ├── search.html     # Search results
 │       └── generate_note.html  # AI note generation
-├── database/
-│   └── notes.db            # SQLite database (auto-generated)
-├── .env                    # Environment variables (GITHUB_TOKEN, etc.)
-└── run.py                  # Application entry point
+├── .github/
+│   └── copilot-instructions.md  # This file
+├── .env                    # Environment variables (not in git)
+├── requirements.txt        # Python dependencies
+├── vercel.json            # Vercel deployment config
+└── run.py                 # Application entry point
 ```
 
 ---
 
-## 🗄️ Database Schema
+## 🗄️ Database Schema (Supabase PostgreSQL)
 
 **Table: `notes`**
 ```sql
 CREATE TABLE notes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     category TEXT,              -- AI-generated or user-defined
     tags TEXT,                  -- Comma-separated, max 3
     event_date DATE,            -- YYYY-MM-DD format
     event_time TIME,            -- HH:MM 24-hour format
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
+
+**Database Access Method**: Supabase Python SDK (NOT direct psycopg2)
 
 ---
 
@@ -62,40 +68,96 @@ CREATE TABLE notes (
 
 ### Python (Backend)
 
-1. **Function Naming**: Use `snake_case` for all functions and variables
-   ```python
-   def get_db_connection():
-   def init_db():
-   def api_generate_note():
-   ```
+#### 1. Function Naming
+- Use `snake_case` for all functions and variables
+- Be descriptive and action-oriented
 
-2. **Route Naming**: 
-   - Page routes: `/`, `/add`, `/edit/<id>`, `/note/<id>`
-   - API routes: `/api/translate`, `/api/generate-note`, `/api/generate-tags`
+```python
+def get_all_notes():
+def add_new_note(title, content):
+def api_generate_note():
+```
 
-3. **Database Connections**:
-   - Always use `get_db_connection()` function
-   - Use context managers or explicit `.close()`
-   - Set `conn.row_factory = sqlite3.Row` for dict-like access
+#### 2. Route Naming
+- **Page routes**: `/`, `/add`, `/edit/<id>`, `/note/<id>`
+- **API routes**: `/api/translate`, `/api/generate-note`, `/api/generate-tags`
+- Always use `url_for()` in templates and redirects
 
-4. **Error Handling**:
-   ```python
-   try:
-       # Database or LLM operations
-   except Exception as e:
-       return jsonify({'success': False, 'error': str(e)}), 500
-   ```
+#### 3. Database Operations with Supabase SDK
 
-5. **JSON Responses**:
-   ```python
-   return jsonify({
-       'success': True,
-       'data': result
-   })
-   ```
+**✅ CORRECT (Use Supabase Client):**
+```python
+# Query
+response = supabase.table('notes').select('*').eq('id', note_id).execute()
+note = response.data[0] if response.data else None
 
-6. **LLM Integration**:
-   - Import from `backend.llm`: `call_llm_model`, `translate_text`, `generate_tags`
+# Insert
+response = supabase.table('notes').insert({
+    'title': title,
+    'content': content
+}).execute()
+note_id = response.data[0]['id']
+
+# Update
+supabase.table('notes').update({
+    'title': title,
+    'updated_at': datetime.now().isoformat()
+}).eq('id', note_id).execute()
+
+# Delete
+supabase.table('notes').delete().eq('id', note_id).execute()
+```
+
+**❌ WRONG (Don't use direct SQL or psycopg2):**
+```python
+# DON'T DO THIS
+cursor.execute('SELECT * FROM notes WHERE id = %s', (id,))
+```
+
+#### 4. Error Handling Pattern
+
+Always wrap database operations in try-except:
+
+```python
+try:
+    response = supabase.table('notes').select('*').execute()
+    notes = response.data
+except Exception as e:
+    print(f"Error fetching notes: {e}")
+    notes = []
+    flash('Error loading notes', 'error')
+```
+
+#### 5. JSON API Responses
+
+```python
+# Success
+return jsonify({
+    'success': True,
+    'data': result
+})
+
+# Error
+return jsonify({
+    'success': False,
+    'error': str(e)
+}), 500
+```
+
+#### 6. LLM Integration
+- Import from `backend.llm`: `call_llm_model`, `translate_text`, `generate_tags`
+- **Always use temperature `0.3`** for structured extraction
+- **Always use temperature `0.7`** for creative generation
+
+```python
+from backend.llm import call_llm_model, translate_text
+
+# Structured extraction (lower temperature)
+response = call_llm_model(messages, temperature=0.3)
+
+# Creative generation (higher temperature)
+response = call_llm_model(messages, temperature=0.7)
+```
    - Always use temperature `0.3` for structured extraction
    - Always use temperature `0.7` for creative generation
 

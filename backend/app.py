@@ -50,10 +50,10 @@ def index():
         # Determine sort order
         if sort_by == 'event_date':
             # Sort by event date, putting NULL values last using NULLS LAST
-            query = supabase.table('notes').select('*').order('event_date', desc=True, nulls_first=False).order('event_time', desc=True)
+            query = supabase.table('notes').select('*').order('event_date', desc=False, nullsfirst=False).order('event_time', desc=False)
         elif sort_by == 'event_time':
             # Sort by event time, putting NULL values last
-            query = supabase.table('notes').select('*').order('event_time', desc=True, nulls_first=False).order('event_date', desc=True)
+            query = supabase.table('notes').select('*').order('event_time', desc=False, nullsfirst=False).order('event_date', desc=False)
         elif sort_by == 'created':
             query = supabase.table('notes').select('*').order('created_at', desc=True)
         elif sort_by == 'title':
