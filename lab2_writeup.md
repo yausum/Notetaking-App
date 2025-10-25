@@ -25,7 +25,7 @@ By completing this project, I gained a lot of valuable experience, particularly 
 - Review AI-generated content carefully, as AI may sometimes produce inaccurate or unintended results.
 - Provide clear and detailed instructions to help the AI generate more accurate and relevant outputs.
 
-### Challange
+## Challange
 Sometimes, the AI may generate errors or behave unexpectedly. By providing clear references and well-defined prompts to guide the AI, the issues can eventually be resolved.
 
 ![alt text](./image/image.png)
@@ -89,7 +89,7 @@ Once the basic functionality was completed and thoroughly tested, I committed an
 
 
 
-### Phase 2: AI Features Integration
+## Phase 2: AI Features Integration
 
 To integrate AI capabilities into the note‑taking application, I prepared a prompt instructing the AI to create a Python file named llm.py.
 This file is responsible for connecting to the OpenAI API and handling all AI-related operations within the project.
@@ -134,7 +134,7 @@ I found that the “Generate Notes” function did not generate categories as ex
 ![alt text](./image/image-24.png)
 
 
-### Phase 3: Database Migration (SQLite → Supabase)
+## Phase 3: Database Migration (SQLite → Supabase)
 
 After completing the AI feature integration, I moved on to the database migration phase, transitioning the system from SQLite to Supabase for improved scalability and cloud-based data management.
 
@@ -156,7 +156,7 @@ I decided to adopt the second configuration method, and the AI helped me modify 
 I reviewed and performed testing on the program, confirming that it works as expected.
 
 
-### Phase 4: Deployment to Vercel
+## Phase 4: Deployment to Vercel
 
 First, I asked the AI how to deploy my source code to Vercel, so I could host the web application online.
 
